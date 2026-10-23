@@ -1,0 +1,436 @@
+-- ไอฟินขี่แตก💩 Script (Full Functional Version)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Create UI Container
+local CoreGui = game:GetService("CoreGui")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FinKheeTaekUI"
+ScreenGui.Parent = CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+-- Open/Close Main Button
+local ToggleBtn = Instance.new("TextButton", ScreenGui)
+ToggleBtn.Size = UDim2.new(0, 130, 0, 35)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 102, 204)
+ToggleBtn.Text = "ไอฟินขี่แตก💩"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Font = Enum.Font.SourceSansBold
+ToggleBtn.TextSize = 16
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 6)
+
+-- Main Menu Frame
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 300, 0, 460)
+MainFrame.Position = UDim2.new(0.35, 0, 0.15, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 25, 50)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+-- Header Bar
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 38)
+Title.BackgroundColor3 = Color3.fromRGB(0, 80, 180)
+Title.Text = "ไอฟินขี่แตก💩 Menu"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 8)
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- Scroll Area
+local Scroll = Instance.new("ScrollingFrame", MainFrame)
+Scroll.Size = UDim2.new(1, 0, 1, -40)
+Scroll.Position = UDim2.new(0, 0, 0, 40)
+Scroll.BackgroundTransparency = 1
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 650)
+Scroll.ScrollBarThickness = 5
+
+local UIList = Instance.new("UIListLayout", Scroll)
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIList.Padding = UDim.new(0, 6)
+
+-- ปุ่มหมวดแกล้งคนอยู่ด้านบนสุด (กด > เพื่อ เปิด/ปิด ข้อ 1-10)
+local CategoryBtn = Instance.new("TextButton", Scroll)
+CategoryBtn.Size = UDim2.new(0.92, 0, 0, 35)
+CategoryBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+CategoryBtn.Text = "แกล้งคน > (เปิด/ปิดเมนู)"
+CategoryBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CategoryBtn.Font = Enum.Font.SourceSansBold
+CategoryBtn.TextSize = 15
+Instance.new("UICorner", CategoryBtn).CornerRadius = UDim.new(0, 6)
+
+-- Frame รวมฟังก์ชั่นข้อ 1 ถึง 10
+local ContentGroup = Instance.new("Frame", Scroll)
+ContentGroup.Size = UDim2.new(0.92, 0, 0, 580)
+ContentGroup.BackgroundTransparency = 1
+ContentGroup.Visible = true
+
+local ContentList = Instance.new("UIListLayout", ContentGroup)
+ContentList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ContentList.Padding = UDim.new(0, 6)
+
+local menuExpanded = true
+CategoryBtn.MouseButton1Click:Connect(function()
+    menuExpanded = not menuExpanded
+    CategoryBtn.Text = menuExpanded and "แกล้งคน v (เปิด/ปิดเมนู)" or "แกล้งคน > (เปิด/ปิดเมนู)"
+    ContentGroup.Visible = menuExpanded
+end)
+
+local function createBtn(text)
+    local btn = Instance.new("TextButton", ContentGroup)
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 14
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    return btn
+end
+
+-- Variables / States
+local infJump = false
+local isInvisible = false
+local aimbot = false
+local fling = false
+local esp = false
+local noclip = false
+local antiFling = false
+local flyBackAttach = false
+local selectedPlayer = nil
+
+-- 1. วิ่งเร็ว (ปรับ 1-1000)
+local SpeedFrame = Instance.new("Frame", ContentGroup)
+SpeedFrame.Size = UDim2.new(1, 0, 0, 32)
+SpeedFrame.BackgroundTransparency = 1
+
+local SpeedBox = Instance.new("TextBox", SpeedFrame)
+SpeedBox.Size = UDim2.new(0.7, 0, 1, 0)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(20, 40, 80)
+SpeedBox.PlaceholderText = "1. ความเร็ว (1-1000)"
+SpeedBox.Text = ""
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", SpeedBox).CornerRadius = UDim.new(0, 6)
+
+local SpeedBtn = Instance.new("TextButton", SpeedFrame)
+SpeedBtn.Size = UDim2.new(0.28, 0, 1, 0)
+SpeedBtn.Position = UDim2.new(0.72, 0, 0, 0)
+SpeedBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+SpeedBtn.Text = "ปรับ"
+SpeedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", SpeedBtn).CornerRadius = UDim.new(0, 6)
+
+SpeedBtn.MouseButton1Click:Connect(function()
+    local val = tonumber(SpeedBox.Text)
+    if val and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = math.clamp(val, 1, 1000)
+    end
+end)
+
+-- 2. กระโดดได้ไม่จำกัด
+local BtnJump = createBtn("2. กระโดดไม่จำกัด: OFF")
+BtnJump.MouseButton1Click:Connect(function()
+    infJump = not infJump
+    BtnJump.Text = "2. กระโดดไม่จำกัด: " .. (infJump and "ON" or "OFF")
+    BtnJump.BackgroundColor3 = infJump and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if infJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+-- 3. หายตัว (คนอื่นมองไม่เห็น)
+local BtnInvis = createBtn("3. หายตัว: OFF")
+BtnInvis.MouseButton1Click:Connect(function()
+    isInvisible = not isInvisible
+    BtnInvis.Text = "3. หายตัว: " .. (isInvisible and "ON" or "OFF")
+    BtnInvis.BackgroundColor3 = isInvisible and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+    
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        if isInvisible then
+            local savedCF = char.HumanoidRootPart.CFrame
+            char:MoveTo(Vector3.new(0, 100000, 0))
+            task.wait(0.1)
+            local clone = char.HumanoidRootPart:Clone()
+            clone.Parent = char
+            char.HumanoidRootPart:Destroy()
+            char:MoveTo(savedCF.Position)
+        else
+            if char:FindFirstChild("Humanoid") then
+                char.Humanoid.Health = 0
+            end
+        end
+    end
+end)
+
+-- 4. ล็อคหัว
+local BtnAim = createBtn("4. ล็อคหัว: OFF")
+BtnAim.MouseButton1Click:Connect(function()
+    aimbot = not aimbot
+    BtnAim.Text = "4. ล็อคหัว: " .. (aimbot and "ON" or "OFF")
+    BtnAim.BackgroundColor3 = aimbot and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+end)
+
+RunService.RenderStepped:Connect(function()
+    if aimbot then
+        local cam = workspace.CurrentCamera
+        local target = nil
+        local dist = math.huge
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                local pos, vis = cam:WorldToViewportPoint(p.Character.Head.Position)
+                if vis then
+                    local mDist = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                    if mDist < dist then
+                        dist = mDist
+                        target = p
+                    end
+                end
+            end
+        end
+        if target then
+            cam.CFrame = CFrame.new(cam.CFrame.Position, target.Character.Head.Position)
+        end
+    end
+end)
+
+-- 5. ชนคนกระเด็น (Fling Player)
+local BtnFling = createBtn("5. ชนคนกระเด็น: OFF")
+BtnFling.MouseButton1Click:Connect(function()
+    fling = not fling
+    BtnFling.Text = "5. ชนคนกระเด็น: " .. (fling and "ON" or "OFF")
+    BtnFling.BackgroundColor3 = fling and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+end)
+
+RunService.Stepped:Connect(function()
+    if fling and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        local oldVelocity = hrp.Velocity
+        hrp.Velocity = Vector3.new(10000, 10000, 10000)
+        RunService.RenderStepped:Wait()
+        hrp.Velocity = oldVelocity
+    end
+end)
+
+-- 6. มองทะลุชื่อคน (ESP Name)
+local BtnESP = createBtn("6. มองทะลุชื่อคน: OFF")
+local function applyESP(p)
+    if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("FinESP") then
+        local head = p.Character:FindFirstChild("Head")
+        if head then
+            local bbg = Instance.new("BillboardGui", head)
+            bbg.Name = "FinESP"
+            bbg.AlwaysOnTop = true
+            bbg.Size = UDim2.new(0, 100, 0, 30)
+            bbg.StudsOffset = Vector3.new(0, 2.5, 0)
+            
+            local txt = Instance.new("TextLabel", bbg)
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.BackgroundTransparency = 1
+            txt.Text = p.DisplayName
+            txt.TextColor3 = Color3.fromRGB(0, 255, 255)
+            txt.Font = Enum.Font.SourceSansBold
+            txt.TextSize = 14
+            txt.TextStrokeTransparency = 0
+        end
+    end
+end
+
+BtnESP.MouseButton1Click:Connect(function()
+    esp = not esp
+    BtnESP.Text = "6. มองทะลุชื่อคน: " .. (esp and "ON" or "OFF")
+    BtnESP.BackgroundColor3 = esp and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+    for _, p in pairs(Players:GetPlayers()) do
+        if esp then
+            applyESP(p)
+        elseif p.Character and p.Character:FindFirstChild("Head") and p.Character.Head:FindFirstChild("FinESP") then
+            p.Character.Head.FinESP:Destroy()
+        end
+    end
+end)
+
+-- 7. บินไปเกาะด้านหลังผู้เล่นในเซิร์ฟเวอร์
+local AttachFrame = Instance.new("Frame", ContentGroup)
+AttachFrame.Size = UDim2.new(1, 0, 0, 65)
+AttachFrame.BackgroundTransparency = 1
+
+local SelectPlayerBtn = Instance.new("TextButton", AttachFrame)
+SelectPlayerBtn.Size = UDim2.new(1, 0, 0, 30)
+SelectPlayerBtn.BackgroundColor3 = Color3.fromRGB(20, 40, 80)
+SelectPlayerBtn.Text = "7. เลือกผู้เล่นในเซิฟ ▼"
+SelectPlayerBtn.TextColor3 = Color3.fromRGB(0, 200, 255)
+SelectPlayerBtn.Font = Enum.Font.SourceSansBold
+SelectPlayerBtn.TextSize = 13
+Instance.new("UICorner", SelectPlayerBtn).CornerRadius = UDim.new(0, 6)
+
+local DropListFrame = Instance.new("ScrollingFrame", AttachFrame)
+DropListFrame.Size = UDim2.new(1, 0, 0, 90)
+DropListFrame.Position = UDim2.new(0, 0, 0, 32)
+DropListFrame.BackgroundColor3 = Color3.fromRGB(10, 20, 40)
+DropListFrame.Visible = false
+DropListFrame.ZIndex = 10
+Instance.new("UIListLayout", DropListFrame)
+
+SelectPlayerBtn.MouseButton1Click:Connect(function()
+    for _, child in pairs(DropListFrame:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    local count = 0
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            count = count + 1
+            local pBtn = Instance.new("TextButton", DropListFrame)
+            pBtn.Size = UDim2.new(1, 0, 0, 25)
+            pBtn.BackgroundColor3 = Color3.fromRGB(20, 40, 80)
+            pBtn.Text = p.DisplayName .. " (@" .. p.Name .. ")"
+            pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            pBtn.Font = Enum.Font.SourceSans
+            pBtn.TextSize = 12
+            pBtn.ZIndex = 11
+            pBtn.MouseButton1Click:Connect(function()
+                selectedPlayer = p
+                SelectPlayerBtn.Text = "เลือกแล้ว: " .. p.DisplayName
+                DropListFrame.Visible = false
+            end)
+        end
+    end
+    DropListFrame.CanvasSize = UDim2.new(0, 0, 0, count * 25)
+    DropListFrame.Visible = not DropListFrame.Visible
+end)
+
+local BtnAttach = Instance.new("TextButton", AttachFrame)
+BtnAttach.Size = UDim2.new(1, 0, 0, 30)
+BtnAttach.Position = UDim2.new(0, 0, 0, 35)
+BtnAttach.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+BtnAttach.Text = "บินเกาะด้านหลังผู้เล่น: OFF"
+BtnAttach.TextColor3 = Color3.fromRGB(255, 255, 255)
+BtnAttach.Font = Enum.Font.SourceSansBold
+BtnAttach.TextSize = 13
+Instance.new("UICorner", BtnAttach).CornerRadius = UDim.new(0, 6)
+
+BtnAttach.MouseButton1Click:Connect(function()
+    flyBackAttach = not flyBackAttach
+    BtnAttach.Text = "บินเกาะด้านหลังผู้เล่น: " .. (flyBackAttach and "ON" or "OFF")
+    BtnAttach.BackgroundColor3 = flyBackAttach and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+end)
+
+RunService.Heartbeat:Connect(function()
+    if flyBackAttach and selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            -- ล็อคตำแหน่งให้อยู่ด้านหลังของผู้เล่นเป้าหมายระยะ 2.5 Studs
+            LocalPlayer.Character.HumanoidRootPart.CFrame = selectedPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2.5)
+        end
+    end
+end)
+
+-- 8. บิน V3 แบบมีหน้าต่างควบคุมเอง
+local FlyGui = Instance.new("Frame", ScreenGui)
+FlyGui.Size = UDim2.new(0, 180, 0, 100)
+FlyGui.Position = UDim2.new(0.05, 0, 0.4, 0)
+FlyGui.BackgroundColor3 = Color3.fromRGB(15, 25, 50)
+FlyGui.Visible = false
+FlyGui.Active = true
+FlyGui.Draggable = true
+Instance.new("UICorner", FlyGui).CornerRadius = UDim.new(0, 8)
+
+local FlyTitle = Instance.new("TextLabel", FlyGui)
+FlyTitle.Size = UDim2.new(1, 0, 0, 25)
+FlyTitle.BackgroundColor3 = Color3.fromRGB(0, 80, 180)
+FlyTitle.Text = "Fly V3 Control"
+FlyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyTitle.Font = Enum.Font.SourceSansBold
+FlyTitle.TextSize = 14
+Instance.new("UICorner", FlyTitle).CornerRadius = UDim.new(0, 8)
+
+local FlyToggle = Instance.new("TextButton", FlyGui)
+FlyToggle.Size = UDim2.new(0.85, 0, 0, 30)
+FlyToggle.Position = UDim2.new(0.075, 0, 0.38, 0)
+FlyToggle.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+FlyToggle.Text = "บิน V3: OFF"
+FlyToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyToggle.Font = Enum.Font.SourceSansBold
+FlyToggle.TextSize = 13
+Instance.new("UICorner", FlyToggle).CornerRadius = UDim.new(0, 6)
+
+local flyActive, bodyVel, bodyGyro = false, nil, nil
+FlyToggle.MouseButton1Click:Connect(function()
+    flyActive = not flyActive
+    FlyToggle.Text = "บิน V3: " .. (flyActive and "ON" or "OFF")
+    FlyToggle.BackgroundColor3 = flyActive and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+    
+    local char = LocalPlayer.Character
+    if flyActive and char and char:FindFirstChild("HumanoidRootPart") then
+        local hrp = char.HumanoidRootPart
+        bodyVel = Instance.new("BodyVelocity", hrp)
+        bodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        bodyGyro = Instance.new("BodyGyro", hrp)
+        bodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+    else
+        if bodyVel then bodyVel:Destroy() end
+        if bodyGyro then bodyGyro:Destroy() end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if flyActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and bodyVel and bodyGyro then
+        local cam = workspace.CurrentCamera
+        bodyGyro.CFrame = cam.CFrame
+        bodyVel.Velocity = cam.CFrame.LookVector * 60
+    end
+end)
+
+local BtnFlyWindow = createBtn("8. หน้าต่างบิน V3 (เปิด/ปิด)")
+BtnFlyWindow.MouseButton1Click:Connect(function()
+    FlyGui.Visible = not FlyGui.Visible
+end)
+
+-- 9. เดินทะลุกำแพง (Noclip)
+local BtnNoclip = createBtn("9. เดินทะลุกำแพง: OFF")
+BtnNoclip.MouseButton1Click:Connect(function()
+    noclip = not noclip
+    BtnNoclip.Text = "9. เดินทะลุกำแพง: " .. (noclip and "ON" or "OFF")
+    BtnNoclip.BackgroundColor3 = noclip and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+end)
+
+RunService.Stepped:Connect(function()
+    if (noclip or flyActive) and LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+-- 10. กันโดนปลิว (Anti-Fling)
+local BtnAntiFling = createBtn("10. กันโดนปลิว: OFF")
+BtnAntiFling.MouseButton1Click:Connect(function()
+    antiFling = not antiFling
+    BtnAntiFling.Text = "10. กันโดนปลิว: " .. (antiFling and "ON" or "OFF")
+    BtnAntiFling.BackgroundColor3 = antiFling and Color3.fromRGB(0, 180, 100) or Color3.fromRGB(0, 120, 215)
+end)
+
+RunService.Stepped:Connect(function()
+    if antiFling then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                for _, part in pairs(p.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+    end
+end)
